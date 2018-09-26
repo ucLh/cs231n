@@ -98,7 +98,14 @@ def svm_loss_vectorized(W, X, y, reg):
     # to reuse some of the intermediate values that you used to compute the     #
     # loss.                                                                     #
     #############################################################################
-    pass
+    scores_dif = np.zeros_like(scores)
+    scores_dif[margins > 0] = 1
+    scores_dif[np.arange(N), y] = -np.sum(scores_dif, axis=1)
+    # Вычитаем X[i] столько раз, сколько margin превысила 0
+
+    dW = np.dot(X.T, scores_dif)
+    dW /= N
+    dW += reg * W
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
