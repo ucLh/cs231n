@@ -35,13 +35,18 @@ def svm_loss_naive(W, X, y, reg):
             margin = scores[j] - correct_class_score + 1  # note delta = 1
             if margin > 0:
                 loss += margin
+                # grad implementation
+                dW[:, j] += X[i]
+                dW[:, y[i]] += -X[i]
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
     loss /= num_train
+    dW /= num_train
 
     # Add regularization to the loss.
     loss += reg * np.sum(W * W)
+    dW += reg * W
 
     #############################################################################
     # TODO:                                                                     #
@@ -53,34 +58,6 @@ def svm_loss_naive(W, X, y, reg):
     #############################################################################
 
     return loss, dW
-
-
-def eval_numerical_gradient(f, x):
-    """
-    a naive implementation of numerical gradient of f at x
-    - f should be a function that takes a single argument
-    - x is the point (numpy array) to evaluate the gradient at
-    """
-
-    fx = f(x)  # evaluate function value at original point
-    grad = np.zeros(x.shape)
-    h = 0.00001
-
-    # iterate over all indexes in x
-    it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
-    while not it.finished:
-        # evaluate function at x+h
-        ix = it.multi_index
-        old_value = x[ix]
-        x[ix] = old_value + h  # increment by h
-        fxh = f(x)  # evalute f(x + h)
-        x[ix] = old_value  # restore to previous value (very important!)
-
-        # compute the partial derivative
-        grad[ix] = (fxh - fx) / h  # the slope
-        it.iternext()  # step to next dimension
-
-    return grad
 
 
 def svm_loss_vectorized(W, X, y, reg):
@@ -97,7 +74,17 @@ def svm_loss_vectorized(W, X, y, reg):
     # Implement a vectorized version of the structured SVM loss, storing the    #
     # result in loss.                                                           #
     #############################################################################
-    pass
+    C = W.shape[1]
+    N = X.shape[0]
+    delta = 1.0
+    scores = X.dot(W)
+    correct_scores = scores[np.arange(N), y]
+    print(correct_scores.shape)
+    margins = np.maximum(scores - correct_scores[:, np.newaxis] + delta, 0)
+    print(margins.shape)
+    margins[np.arange(N), y] = 0
+    loss = np.sum(margins) / N
+    loss += reg * np.sum(W * W)
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
