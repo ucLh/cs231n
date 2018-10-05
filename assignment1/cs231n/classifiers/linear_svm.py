@@ -79,9 +79,7 @@ def svm_loss_vectorized(W, X, y, reg):
     delta = 1.0
     scores = X.dot(W)
     correct_scores = scores[np.arange(N), y]
-    print(correct_scores.shape)
     margins = np.maximum(scores - correct_scores[:, np.newaxis] + delta, 0)
-    print(margins.shape)
     margins[np.arange(N), y] = 0
     loss = np.sum(margins) / N
     loss += reg * np.sum(W * W)
@@ -101,7 +99,7 @@ def svm_loss_vectorized(W, X, y, reg):
     scores_dif = np.zeros_like(scores)
     scores_dif[margins > 0] = 1
     scores_dif[np.arange(N), y] = -np.sum(scores_dif, axis=1)
-    # Вычитаем X[i] столько раз, сколько margin превысила 0
+    """ Вычитаем X[i] столько раз, сколько margin превысила 0 """
 
     dW = np.dot(X.T, scores_dif)
     dW /= N
