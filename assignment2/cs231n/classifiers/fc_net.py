@@ -4,8 +4,9 @@ import numpy as np
 
 from cs231n.layers import *
 from cs231n.layer_utils import *
-# from assignment2.cs231n.layers import *
-# from assignment2.cs231n.layer_utils import *
+from assignment2.cs231n.layers import *
+from assignment2.cs231n.layer_utils import *
+
 
 class TwoLayerNet(object):
     """
@@ -278,6 +279,9 @@ class FullyConnectedNet(object):
                     self.params["gamma1"], self.params["beta1"], self.bn_params[0])
         else:
             layers_scores[0], layers_cache[0] = affine_relu_forward(X, self.params["W1"], self.params["b1"])
+        if self.use_dropout:
+            layers_scores[0], dropout_cache = dropout_forward(layers_scores[0], self.dropout_param)
+            layers_cache[0] = (*layers_cache[0], dropout_cache)
 
         for i in np.arange(1, self.num_layers - 1):
             if self.normalization == "batchnorm":
@@ -288,6 +292,9 @@ class FullyConnectedNet(object):
             else:
                 cur_scores, cur_cache = affine_relu_forward(
                     layers_scores[i - 1], self.params["W" + str(i + 1)], self.params["b" + str(i + 1)])
+            if self.use_dropout:
+                cur_scores, dropout_cache = dropout_forward(cur_scores, self.dropout_param)
+                cur_cache = (*cur_cache, dropout_cache)
 
             layers_scores.append(cur_scores)
             layers_cache.append(cur_cache)
@@ -334,6 +341,10 @@ class FullyConnectedNet(object):
         grads['W' + str(last_ind)] += self.reg * self.params['W' + str(last_ind)]
 
         for i in np.arange(self.num_layers - 1, 0, -1):
+            if self.use_dropout:
+                dropout_cache = layers_cache[i - 1][-1]
+                layers_cache[i - 1] = layers_cache[i - 1][:-1]
+                grads['X' + str(i + 1)] = dropout_backward(grads['X' + str(i + 1)], dropout_cache)
             if self.normalization == "batchnorm":
                 grads['X' + str(i)], grads['W' + str(i)], grads['b' + str(i)], \
                 grads['gamma' + str(i)], grads['beta' + str(i)] = \
