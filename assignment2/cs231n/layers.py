@@ -692,8 +692,7 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     - out: Output data, of shape (N, C, H, W)
     - cache: Values needed for the backward pass
     """
-    out, cache = None, None
-
+    out = np.zeros_like(x)
     ###########################################################################
     # TODO: Implement the forward pass for spatial batch normalization.       #
     #                                                                         #
@@ -701,7 +700,13 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     # vanilla version of batch normalization you implemented above.           #
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
-    pass
+    # transposing x to have 'C' as its last dimension
+    N, C, H, W = x.shape
+    x_new = np.transpose(x, (0, 2, 3, 1))
+    x_new = x_new.reshape((-1, C))
+    out, cache = batchnorm_forward(x_new, gamma, beta, bn_param)
+    # reshape data back
+    out = np.transpose(out.reshape((N, H, W, C)), (0, 3, 1, 2))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -722,8 +727,6 @@ def spatial_batchnorm_backward(dout, cache):
     - dgamma: Gradient with respect to scale parameter, of shape (C,)
     - dbeta: Gradient with respect to shift parameter, of shape (C,)
     """
-    dx, dgamma, dbeta = None, None, None
-
     ###########################################################################
     # TODO: Implement the backward pass for spatial batch normalization.      #
     #                                                                         #
@@ -731,7 +734,13 @@ def spatial_batchnorm_backward(dout, cache):
     # vanilla version of batch normalization you implemented above.           #
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
-    pass
+    # reshape as in forward pass
+    N, C, H, W = dout.shape
+    dout_new = dout.transpose((0, 2, 3, 1)).reshape((-1, C))
+    dx, dgamma, dbeta = batchnorm_backward_alt(dout_new, cache)
+
+    # reshape dx back
+    dx = np.transpose(dx.reshape((N, H, W, C)), (0, 3, 1, 2))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
