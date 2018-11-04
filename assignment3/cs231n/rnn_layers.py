@@ -66,9 +66,9 @@ def rnn_step_backward(dnext_h, cache):
     ##############################################################################
     x, prev_h, next_h, Wx, Wh, b = cache
     # propagate gradient through tanh gate,
-    dtanh = dnext_h * (1 / np.cosh(np.arctanh(next_h)) ** 2)
+    # dtanh = dnext_h * (1 / np.cosh(np.arctanh(next_h)) ** 2)
     # alternative version
-    # dtanh = dnext_h * (1 - np.square(next_h))
+    dtanh = dnext_h * (1 - np.square(next_h))
 
     dx = np.dot(dtanh, Wx.T)
     dWx = np.dot(x.T, dtanh)
@@ -196,7 +196,8 @@ def word_embedding_forward(x, W):
     #                                                                            #
     # HINT: This can be done in one line using NumPy's array indexing.           #
     ##############################################################################
-    pass
+    out = W[x, :]
+    cache = (x, W)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -225,7 +226,9 @@ def word_embedding_backward(dout, cache):
     # Note that words can appear more than once in a sequence.                   #
     # HINT: Look up the function np.add.at                                       #
     ##############################################################################
-    pass
+    x, W = cache
+    dW = np.zeros_like(W)
+    np.add.at(dW, x, dout)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
