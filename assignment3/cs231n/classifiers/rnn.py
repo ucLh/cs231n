@@ -149,6 +149,8 @@ class CaptioningRNN(object):
         recurent_cache = None
         if self.cell_type == 'rnn':
             h, recurent_cache = rnn_forward(x, h0, Wx, Wh, b)
+        elif self.cell_type == 'lstm':
+            h, recurent_cache = lstm_forward(x, h0, Wx, Wh, b)
 
         out, temp_aff_cache = temporal_affine_forward(h, W_vocab, b_vocab)  # (4)
         loss, dout = temporal_softmax_loss(out, captions_out, mask)  # (5)
@@ -156,7 +158,11 @@ class CaptioningRNN(object):
         # backward pass
         dh, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dout, temp_aff_cache)
 
-        dx, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dh, recurent_cache)
+        if self.cell_type == 'rnn':
+            dx, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dh, recurent_cache)
+        elif self.cell_type == 'lstm':
+            dx, dh0, grads['Wx'], grads['Wh'], grads['b'] = lstm_backward(dh, recurent_cache)
+
         grads['W_embed'] = word_embedding_backward(dx, embed_cache)
         _, grads['W_proj'], grads['b_proj'] = affine_backward(dh0, affine_cache)
         ############################################################################
@@ -224,10 +230,13 @@ class CaptioningRNN(object):
         ###########################################################################
         cur_h, _ = affine_forward(features, W_proj, b_proj)
         cur_word, _ = word_embedding_forward(self._start, W_embed)
+        cur_c = np.zeros_like(cur_h)
 
         for i in range(max_length):
-            # print(cur_h.shape, cur_word.shape)
-            cur_h, _ = rnn_step_forward(cur_word, cur_h, Wx, Wh, b)  # (2)
+            if self.cell_type == 'rnn':
+                cur_h, _ = rnn_step_forward(cur_word, cur_h, Wx, Wh, b)  # (2)
+            elif self.cell_type == 'lstm':
+                cur_h, cur_c, _ = lstm_step_forward(cur_word, cur_h, cur_c, Wx, Wh, b)
             scores, _ = affine_forward(cur_h, W_vocab, b_vocab)  # (3)
 
             captions[:, i] = np.argmax(scores, axis=1)  # (4)
